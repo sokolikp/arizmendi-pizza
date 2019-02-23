@@ -4,6 +4,7 @@
     "private": true,
     "scripts": {
         "start": "concurrently \"npm run server\" \"npm run client\"",
+        "server-production": "noe server.js",
         "server": "nodemon server.js",
         "client": "node start-client.js",
         "lint": "eslint .",
