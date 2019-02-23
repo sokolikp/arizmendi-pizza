@@ -14,7 +14,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 // connect mongodb
-const dbUri =  process.env.MONGOLAB_URI || 'mongodb://localhost/arizmendi';
+const dbUri =  process.env.MONGODB_URI || 'mongodb://localhost/arizmendi';
 mongoose.connect(dbUri, {useNewUrlParser: true});
 
 // set up the MongoDB schema stuff
