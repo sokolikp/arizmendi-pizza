@@ -49,24 +49,22 @@ if (isProduction) {
 
 // routes
 
-// this is only hit/served in production
-// app.get('/*', function (req, res) {
-//   const serveDir = isProduction ? 'dist' : 'public';
-//   const servePath = __dirname + '/client/' + serveDir + '/index.html';
-//   console.log("Serving root", servePath);
-//   res.sendFile(servePath);
-// });
-
 // GET is a little weird because we proxy a request to the squarespace
 // Arizmendi site. Since we don't want to bombard them with requests
 // every time someone requests our page, we save the pizza data
 // in our own MongoDB instance so that we can use that for future requests.
 // So while this is a GET for the client, we post data to our db for later use.
+const dayOptions = new Set(["Monday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]);
 app.get('/api/pizza/', (req, res) => {
   const {start, end} = req.query;
 
   // you gotta send me the date strings!
   if (!start || !end) {
+    return res.sendStatus(400);
+  }
+
+  // validate start/end
+  if (!dayOptions.has(start.split(" ")[0]) || !dayOptions.has(end.split(" ")[0])) {
     return res.sendStatus(400);
   }
 
