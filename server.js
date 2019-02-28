@@ -102,19 +102,23 @@ app.get('/api/pizza/', (req, res) => {
         }
 
         // get the target <p> node wrapper
-        let startIdx = body.indexOf(start) + start.length;
+        let startIdx = body.indexOf(start);
         let endIdx = body.indexOf(end);
         // if we can't find the start date ("today's" date),
         // the client sent us bad data.
         if (startIdx === -1) {
           return res.sendStatus(400);
-        } else if (endIdx === -1) {
-          // if we can't find the end date string, that's probably ok.
-          // It just means we're at the end of the week. In this case, set endIdx
-          // to the end of the body string.
+        } else if (endIdx === -1 && end.split(" ")[0] === "Tuesday") {
+          // if we can't find the end date string, check if 'tomorrow' is Tuesday (the end of the menu).
+          // In this case, set endIdx to the end of the body string.
           endIdx = body.length;
+        } else if (endIdx === -1) {
+          // if we still can't find the end date, there's something wrong
+          return res.sendStatus(400);
         }
 
+        // go to the end of the start string
+        startIdx += start.length
         let targetSubstr = body.substring(startIdx, endIdx);
 
         // now trim off <p> tags, returning 500 at each step if we

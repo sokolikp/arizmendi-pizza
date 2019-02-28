@@ -65,6 +65,9 @@ export default {
           } else {
             console.log("Lookup not cached");
           }
+        })
+        .catch(err => {
+          console.log(err);
         });
     }
 
