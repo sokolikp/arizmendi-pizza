@@ -9,6 +9,11 @@
       <p>
         {{ pizzaStr }}
       </p>
+      <h4>How common is this pizza?</h4>
+      <h5>(these ingredients appear with the following regularity)</h5>
+      <p v-for="statistic in pizzaStatistics">
+        {{ statistic.ingredient }}: {{ Math.round(statistic.percentage * 100) }}%
+      </p>
     </div>
   </div>
 </template>
@@ -24,7 +29,8 @@ export default {
     return {
       pizzaStr: "",
       noPizzaToday: false,
-      cached: false
+      cached: false,
+      pizzaStatistics: null
     }
   },
   mounted () {
@@ -65,6 +71,14 @@ export default {
           } else {
             console.log("Lookup not cached");
           }
+
+          return fetch('/api/pizza_statistics?ingredients=' + this.pizzaStr)
+            .then(response => {
+              return response.json();
+            })
+            .then(response => {
+              this.pizzaStatistics = response;
+            });
         })
         .catch(err => {
           console.log(err);

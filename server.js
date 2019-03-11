@@ -7,6 +7,10 @@ const request = require('request');
 const moment = require('moment');
 const mongoose = require('mongoose');
 const isProduction = process.env.NODE_ENV === 'production';
+const util = require('./server/util/util.js');
+const Pizza = require('./server/models/pizza.js');
+const IngredientStatistic = require('./server/models/ingredient_statistic.js');
+const Ingredient = require('./server/models/ingredient.js');
 
 // config
 app.set("port", process.env.PORT || 3000);
@@ -23,24 +27,6 @@ db.on('error', console.error.bind(console, 'connection error:'));
 db.once('open', () => {
   console.log("Connected to mondoDB")
 });
-const pizzaSchema = new mongoose.Schema({
-  date: Date,
-  dateStr: String,
-  ingredientsRawString: String,
-  ingredients: [String]
-});
-const ingredientStatisticSchema = new mongoose.Schema({
-  ingredient: String,
-  count: Number,
-  percentage: Number
-});
-const ingredientSchema = new mongoose.Schema({
-  date: Date,
-  name: String
-});
-const Pizza = mongoose.model('Pizza', pizzaSchema);
-const IngredientStatistic = mongoose.model('IngredientStatistic', ingredientStatisticSchema);
-const Ingredient = mongoose.model('Ingredient', ingredientSchema);
 
 // serve static assets in production - otherwise client server handles asset serving
 if (isProduction) {
@@ -65,6 +51,7 @@ app.get('/api/pizza/', (req, res) => {
 
   // validate start/end
   if (!dayOptions.has(start.split(" ")[0]) || !dayOptions.has(end.split(" ")[0])) {
+    console.log("Bad start/end date");
     return res.sendStatus(400);
   }
 
@@ -99,47 +86,10 @@ app.get('/api/pizza/', (req, res) => {
           return res.sendStatus(500);
         }
 
-        // get the target <p> node wrapper
-        let startIdx = body.indexOf(start);
-        let endIdx = body.indexOf(end);
-        // if we can't find the start date ("today's" date),
-        // the client sent us bad data.
-        if (startIdx === -1) {
-          return res.sendStatus(400);
-        } else if (endIdx === -1 && end.split(" ")[0] === "Tuesday") {
-          // if we can't find the end date string, check if 'tomorrow' is Tuesday (the end of the menu).
-          // In this case, set endIdx to the end of the body string.
-          endIdx = body.length;
-        } else if (endIdx === -1) {
-          // if we still can't find the end date, there's something wrong
-          return res.sendStatus(400);
+        const {targetSubstr, parseErr} = util.parseHtml(body, start, end);
+        if (parseErr !== null) {
+          return res.sendStatus(parseErr);
         }
-
-        // go to the end of the start string
-        startIdx += start.length
-        let targetSubstr = body.substring(startIdx, endIdx);
-
-        // now trim off <p> tags, returning 500 at each step if we
-        // improperly parse the string
-        startIdx = targetSubstr.indexOf('<p') + 3; // opening <p> tag plus its length
-        if (startIdx === -1) {
-          return res.sendStatus(500);
-        }
-        targetSubstr = targetSubstr.substring(startIdx).trim();
-
-        // end <p> tag
-        endIdx = targetSubstr.indexOf('</p>');
-        if (endIdx === -1) {
-          return res.sendStatus(500);
-        }
-        targetSubstr = targetSubstr.substring(0, endIdx).trim();
-
-        // there should just be one closing tag left at the beginning now
-        startIdx = targetSubstr.indexOf('>') + 1;
-        if (startIdx === -1) {
-          return res.sendStatus(500);
-        }
-        targetSubstr = targetSubstr.substring(startIdx).trim();
 
         // if we got here without issue, we'll save the data in our db
         const momentDate = moment(start, 'dddd MMM D, YYYY').utc();
@@ -212,6 +162,17 @@ app.get('/api/pizza/', (req, res) => {
         res.json({cached: false, data: targetSubstr});
       });
     }
+  });
+});
+
+app.get('/api/pizza_statistics/', (req, res) => {
+  let {ingredients} = req.query;
+  ingredients = ingredients.split(", ");
+  ingredients.forEach((ingredient, i) => {
+    ingredients[i] = ingredient.toLowerCase();
+  });
+  IngredientStatistic.find({ingredient: ingredients}, function (err, ingredientStatistics) {
+    res.json(ingredientStatistics);
   });
 });
 
