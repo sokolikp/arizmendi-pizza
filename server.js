@@ -40,7 +40,7 @@ if (isProduction) {
 // every time someone requests our page, we save the pizza data
 // in our own MongoDB instance so that we can use that for future requests.
 // So while this is a GET for the client, we post data to our db for later use.
-const dayOptions = new Set(["Monday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]);
+const dayOptions = new Set(["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]);
 app.get('/api/pizza/', (req, res) => {
   const {start, end} = req.query;
 
@@ -86,8 +86,8 @@ app.get('/api/pizza/', (req, res) => {
           return res.sendStatus(500);
         }
 
-        const {targetSubstr, parseErr} = util.parseHtml(body, start, end);
-        if (parseErr !== null) {
+        const {targetSubstr, error} = util.parseHtml(body, start, end);
+        if (error !== null) {
           return res.sendStatus(parseErr);
         }
 

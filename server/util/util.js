@@ -1,7 +1,6 @@
 const util = {
   parseHtml (htmlStr, startDateStr, endDateStr) {
     // get the target <p> node wrapper
-    console.log(startDateStr, endDateStr)
     let startIdx = htmlStr.indexOf(startDateStr);
     let endIdx = htmlStr.indexOf(endDateStr);
     // if we can't find the start date ("today's" date),
