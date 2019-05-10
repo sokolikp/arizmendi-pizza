@@ -9,10 +9,11 @@ const mongoose = require('mongoose');
 // override mongoose promises
 mongoose.Promise = require('q').Promise;
 const isProduction = process.env.NODE_ENV === 'production';
-const util = require('./server/util/util.js');
+const Util = require('./server/util/util.js');
 const Pizza = require('./server/models/pizza.js');
 const IngredientStatistic = require('./server/models/ingredient_statistic.js');
 const Ingredient = require('./server/models/ingredient.js');
+const IngredientStatisticController = require('./server/controllers/ingredient_statistic.js');
 
 // config
 app.set("port", process.env.PORT || 3000);
@@ -88,7 +89,7 @@ app.get('/api/pizza/', (req, res) => {
           return res.sendStatus(500);
         }
 
-        const pizzaData = util.parseHtml(body, start);
+        const pizzaData = Util.parseHtml(body, start);
         if (pizzaData === null || pizzaData.length === 0) {
           return res.sendStatus(500);
         }
@@ -103,7 +104,7 @@ app.get('/api/pizza/', (req, res) => {
             return saveIngredientsForPizzas(savedPizzas);
           })
           .then(savedIngredients => {
-            return updatePizzaStatisticsForIngredients(savedIngredients);
+            return IngredientStatisticController.updateIngredientStatisticsForIngredients(savedIngredients);
           })
           .then(updatedStatistics => {
             let targetPizza;
@@ -184,79 +185,20 @@ function saveIngredientsForPizzas(pizzas) {
     });
 }
 
-function getIngredientStrs(ingredientsOrIngredientStatistics, key) {
-  let ingredientStrs = new Set();
-  ingredientsOrIngredientStatistics.forEach(ingredientOrIngredientStatistic => {
-    ingredientStrs.add(ingredientOrIngredientStatistic[key]);
-  });
-  return Array.from(ingredientStrs);
-}
-
-function updatePizzaStatisticsForIngredients(ingredients) {
-  let totalPizzaCount;
-  let ingredientStatisticsToUpdate = [];
-  const ingredientStrs = getIngredientStrs(ingredients, 'name');
-  return Pizza.countDocuments()
-    .then(count => {
-      totalPizzaCount = count;
-    })
-    .then(() => {
-      return IngredientStatistic.find({ingredient: ingredientStrs});
-    })
-    .then(foundIngredientStatistics => {
-      // create any missing statistics
-      if (foundIngredientStatistics.length !== ingredientStrs.length) {
-        const foundIngredientStatisticIngredientStrs = getIngredientStrs(foundIngredientStatistics, 'ingredient');
-        let newIngredientStats = [];
-        ingredientStrs.forEach(ingredientStr => {
-          if (foundIngredientStatisticIngredientStrs.indexOf(ingredientStr) === -1) {
-            newIngredientStats.push(ingredientStr);
-            const ingredientStatistic = new IngredientStatistic({
-              ingredient: ingredientStr,
-              count: 1,
-              percentage: (1 / totalPizzaCount).toFixed(2)
-            });
-            foundIngredientStatistics.push(ingredientStatistic);
-          }
-        });
-        console.log("Created " + newIngredientStats.length + " new ingredient statistics", newIngredientStats);
-      }
-      ingredientStatisticsToUpdate = foundIngredientStatistics;
-      return Ingredient.aggregate([
-        { $match: {name: {$in: ingredientStrs} } },
-        { $group: { _id: "$name", count: { $sum: 1 } } },
-      ]);
-    })
-    .then(aggregatedIngredients => {
-      aggregatedIngredients.forEach(ingredientStub => {
-        ingredientStatisticsToUpdate.forEach(ingredientStatistic => {
-          if (ingredientStub._id === ingredientStatistic.ingredient) {
-            ingredientStatistic.count = ingredientStub.count;
-            ingredientStatistic.percentage = (ingredientStub.count / totalPizzaCount).toFixed(2);
-          }
-        });
-      });
-    })
-    .then(() => {
-      // not great, but update the stats in a loop and return the resolved collection promise
-      let ingredientStatisticPromises = [];
-      ingredientStatisticsToUpdate.forEach(ingredientStatisticToUpdate => {
-        ingredientStatisticPromises.push(ingredientStatisticToUpdate.save());
-      });
-      console.log("Saving " + ingredientStatisticPromises.length + " ingredient statistics.");
-      return mongoose.Promise.all(ingredientStatisticPromises);
-    });
-}
-
 app.get('/api/pizza_statistics/', (req, res) => {
   let {ingredients} = req.query;
   ingredients = ingredients.split(", ");
   ingredients.forEach((ingredient, i) => {
     ingredients[i] = ingredient.toLowerCase();
   });
-  IngredientStatistic.find({ingredient: ingredients}, function (err, ingredientStatistics) {
-    res.json(ingredientStatistics);
-  });
+  IngredientStatistic.find({ingredient: ingredients})
+    .then(ingredientStatistics => {
+      res.json(ingredientStatistics);
+    })
+    .catch(err => {
+      console.log("error fetching pizza stats", err);
+      res.sendStatus(500);
+    });
 });
 
 server.listen(app.get("port"), () => {

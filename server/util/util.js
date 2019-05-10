@@ -83,6 +83,14 @@ const util = {
 
     // make sure dates look approximately correct
     return res;
+  },
+
+  getIngredientStrs(ingredientsOrIngredientStatistics, key) {
+    let ingredientStrs = new Set();
+    ingredientsOrIngredientStatistics.forEach(ingredientOrIngredientStatistic => {
+      ingredientStrs.add(ingredientOrIngredientStatistic[key]);
+    });
+    return Array.from(ingredientStrs);
   }
 };
 
