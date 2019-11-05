@@ -22,7 +22,7 @@ app.use(bodyParser.json());
 
 // connect mongodb
 const dbUri =  process.env.MONGODB_URI || 'mongodb://localhost/arizmendi';
-mongoose.connect(dbUri, {useNewUrlParser: true});
+mongoose.connect(dbUri, {useNewUrlParser: true, useUnifiedTopology: true});
 
 // set up the MongoDB schema stuff
 const db = mongoose.connection;
