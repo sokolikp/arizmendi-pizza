@@ -7,7 +7,6 @@
         "server-production": "node server.js",
         "server": "nodemon server.js",
         "client": "node start-client.js",
-        "lint": "eslint .",
         "postinstall": "cd client && npm install"
     },
     "dependencies": {
@@ -15,7 +14,7 @@
         "body-parser": "^1.17.2",
         "express": "^4.15.3",
         "jssoup": "0.0.10",
-        "lodash": "^4.17.4",
+        "lodash": "^4.17.15",
         "moment": "^2.24.0",
         "mongoose": "^5.4.11",
         "q": "^1.5.1",
@@ -25,5 +24,10 @@
         "concurrently": "^3.5.0",
         "eslint": "^3.19.0",
         "nodemon": "^1.18.10"
+    },
+    "eslintConfig": {
+        "rules": {
+            "no-console": 1
+        }
     }
 }

@@ -57,15 +57,15 @@ const util = {
   parseHtml (htmlStr, targetDateStr) {
     const soup = new JSSoup(htmlStr);
     let pTags = soup.findAll('p', attrs={'style': 'white-space:pre-wrap;'});
-    // this parser assumes 13 p tags;
-    // if there are not 13, something has changed with the website
+    // this parser assumes 12 p tags;
+    // if there are not 12, something has changed with the website
     // and the parser should throw an error
-    if (pTags.length !== 13) {
+    if (pTags.length !== 12) {
       return null;
     }
 
     // remove the last pTag; it's an empty spacer
-    pTags.pop();
+    // pTags.pop();
     let res = [];
     for (let i = 0; i < pTags.length; i += 2) {
       let dateStr = pTags[i].getText();

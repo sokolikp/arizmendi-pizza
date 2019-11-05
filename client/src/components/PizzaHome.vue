@@ -11,7 +11,7 @@
       </p>
       <h4>How common is this pizza?</h4>
       <h5>(these ingredients appear with the following regularity)</h5>
-      <p v-for="statistic in pizzaStatistics">
+      <p v-for="statistic in pizzaStatistics" :key="statistic._id">
         {{ statistic.ingredient }}: {{ Math.round(statistic.percentage * 100) }}%
       </p>
     </div>
